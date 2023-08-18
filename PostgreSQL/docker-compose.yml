@@ -1,0 +1,39 @@
+version: "3"
+
+services:
+  web:
+    build: .
+    command: ["/wait-for.sh", "db", "5432", "--", "pytest", "tests/"]
+    volumes:
+      - ./app:/app
+      - ./wait-for.sh:/wait-for.sh
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://testuser:testpass@db:5432/testdb
+      - PYTHONPATH=/app
+      - POSTGRES_USER=testuser
+      - POSTGRES_PASSWORD=testpass
+      - POSTGRES_DB=testdb
+    restart: "no"
+    networks:
+      - app-network 
+
+  db:
+    image: postgres:15
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+    networks:
+      - app-network 
+
+volumes:
+  pgdata:
+
+networks:
+  app-network:
+    driver: bridge
